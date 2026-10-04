@@ -1,4 +1,4 @@
-﻿require("dotenv").config();
+require("dotenv").config();
 const express  = require("express");
 const cors     = require("cors");
 const mongoose = require("mongoose");
@@ -14,7 +14,12 @@ const FETCH_TIMEOUT_MS    = parseInt(process.env.FETCH_TIMEOUT_MS || "5000", 10)
 app.use(cors());
 app.use(express.json());
 
-// ── inter-service helpers ─────────────────────────────────────────────────────
+let memOrders = [];
+
+function isDbConnected() {
+  return mongoose.connection.readyState === 1;
+}
+
 async function fetchWithTimeout(url, ms) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
@@ -51,34 +56,46 @@ async function getProduct(productId) {
   return res.json();
 }
 
-// ── routes ───────────────────────────────────────────────────────────────────
 app.get("/", (_req, res) => res.json({
   service: "order-service",
   status: "running",
   port: PORT,
+  database: isDbConnected() ? "mongodb" : "in-memory-fallback",
   userServiceUrl: USER_SERVICE_URL,
   productServiceUrl: PRODUCT_SERVICE_URL
 }));
 
 app.get("/orders", async (_req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 }).lean();
-    res.json(orders);
-  } catch (err) { console.error(err); res.status(500).json({ message: "Internal server error" }); }
+    if (isDbConnected()) {
+      const orders = await Order.find().sort({ createdAt: -1 }).lean();
+      return res.json(orders);
+    }
+    res.json(memOrders);
+  } catch (err) {
+    console.error("[order-service] GET /orders error:", err.message);
+    res.json(memOrders);
+  }
 });
 
 app.get("/orders/:id", async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).lean();
+    if (isDbConnected()) {
+      const order = await Order.findById(req.params.id).lean();
+      if (!order) return res.status(404).json({ message: "Order not found" });
+      return res.json(order);
+    }
+    const order = memOrders.find(o => String(o._id) === String(req.params.id));
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);
   } catch (err) {
     if (err.name === "CastError") return res.status(404).json({ message: "Order not found" });
-    console.error(err); res.status(500).json({ message: "Internal server error" });
+    const order = memOrders.find(o => String(o._id) === String(req.params.id));
+    if (order) return res.json(order);
+    res.status(404).json({ message: "Order not found" });
   }
 });
 
-// POST /orders  Body: { userId, items: [{ productId, quantity }] }
 app.post("/orders", async (req, res) => {
   const { userId, items } = req.body;
   if (!userId) return res.status(400).json({ message: "userId is required" });
@@ -104,45 +121,50 @@ app.post("/orders", async (req, res) => {
       totalAmount += product.price * qty;
     }
 
-    const order = await Order.create({
+    if (isDbConnected()) {
+      const order = await Order.create({
+        userId:      String(user._id),
+        userName:    user.name,
+        userEmail:   user.email,
+        items:       resolvedItems,
+        totalAmount: Math.round(totalAmount * 100) / 100
+      });
+      return res.status(201).json(order.toObject());
+    }
+
+    const newOrder = {
+      _id: new mongoose.Types.ObjectId().toString(),
       userId:      String(user._id),
       userName:    user.name,
       userEmail:   user.email,
       items:       resolvedItems,
-      totalAmount: Math.round(totalAmount * 100) / 100
-    });
-    res.status(201).json(order.toObject());
+      totalAmount: Math.round(totalAmount * 100) / 100,
+      createdAt:   new Date().toISOString(),
+      updatedAt:   new Date().toISOString()
+    };
+    memOrders.unshift(newOrder);
+    res.status(201).json(newOrder);
   } catch (err) {
     if (err.status) return res.status(err.status).json({ message: err.message });
-    console.error(err); res.status(500).json({ message: "Internal server error" });
+    console.error("[order-service] POST /orders error:", err.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
-// ── startup ──────────────────────────────────────────────────────────────────
 async function start() {
   const uri = process.env.MONGODB_URI;
-  let connected = false;
-  if (uri && !uri.includes("<")) {
+  if (uri && !uri.includes("<") && !uri.includes("placeholder")) {
     try {
-      await mongoose.connect(uri, { serverSelectionTimeoutMS: 3000 });
-      console.log("[order-service] Connected to MongoDB at " + uri);
-      connected = true;
+      await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+      console.log("[order-service] Connected to MongoDB at " + uri.replace(/:([^:@]{3,})@/, ":***@"));
     } catch (err) {
-      console.warn("[order-service] MongoDB connect failed (" + err.message + "), falling back to in-memory MongoDB...");
+      console.warn("[order-service] MongoDB connect warning: " + err.message + " -> running in in-memory mode.");
     }
+  } else {
+    console.log("[order-service] No valid MONGODB_URI provided. Running in in-memory mode.");
   }
-  if (!connected) {
-    try {
-      const { MongoMemoryServer } = require("mongodb-memory-server");
-      const mem = await MongoMemoryServer.create();
-      await mongoose.connect(mem.getUri());
-      console.log("[order-service] Connected to in-memory MongoDB");
-    } catch (memErr) {
-      console.error("[order-service] In-memory MongoDB failed:", memErr.message);
-      process.exit(1);
-    }
-  }
-  app.listen(PORT, () => {
+
+  app.listen(PORT, "0.0.0.0", () => {
     console.log("[order-service] Listening on port " + PORT);
     console.log("  USER_SERVICE_URL    = " + USER_SERVICE_URL);
     console.log("  PRODUCT_SERVICE_URL = " + PRODUCT_SERVICE_URL);

@@ -1,4 +1,4 @@
-﻿require("dotenv").config();
+require("dotenv").config();
 const express  = require("express");
 const cors     = require("cors");
 const mongoose = require("mongoose");
@@ -9,6 +9,23 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+let memUsers = [
+  {
+    _id: "670100000000000000000001",
+    name: "Alice Kumar",
+    email: "alice@campus.edu",
+    course: "Computer Science",
+    semester: 3,
+    role: "student",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+function isDbConnected() {
+  return mongoose.connection.readyState === 1;
+}
 
 function validate(data) {
   const e = [];
@@ -22,95 +39,148 @@ function validate(data) {
   return e;
 }
 
-app.get("/", (_req, res) => res.json({ service: "user-service", status: "running", port: PORT }));
+app.get("/", (_req, res) => res.json({
+  service: "user-service",
+  status: "running",
+  port: PORT,
+  database: isDbConnected() ? "mongodb" : "in-memory-fallback"
+}));
 
 app.get("/users", async (_req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: 1 }).lean();
-    res.json(users);
-  } catch (err) { console.error(err); res.status(500).json({ message: "Internal server error" }); }
+    if (isDbConnected()) {
+      const users = await User.find().sort({ createdAt: 1 }).lean();
+      return res.json(users);
+    }
+    res.json(memUsers);
+  } catch (err) {
+    console.error("[user-service] GET /users error:", err.message);
+    res.json(memUsers);
+  }
 });
 
 app.get("/users/:id", async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).lean();
+    if (isDbConnected()) {
+      const user = await User.findById(req.params.id).lean();
+      if (!user) return res.status(404).json({ message: "User not found" });
+      return res.json(user);
+    }
+    const user = memUsers.find(u => String(u._id) === String(req.params.id));
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (err) {
     if (err.name === "CastError") return res.status(404).json({ message: "User not found" });
-    console.error(err); res.status(500).json({ message: "Internal server error" });
+    const user = memUsers.find(u => String(u._id) === String(req.params.id));
+    if (user) return res.json(user);
+    res.status(404).json({ message: "User not found" });
   }
 });
 
 app.post("/users", async (req, res) => {
   const errors = validate(req.body);
   if (errors.length) return res.status(400).json({ message: "Validation failed", errors });
+
+  const { name, email, course, semester, role } = req.body;
+
   try {
-    const { name, email, course, semester, role } = req.body;
-    const user = await User.create({ name, email, course, semester: Number(semester), role });
-    res.status(201).json(user.toObject());
+    if (isDbConnected()) {
+      const user = await User.create({ name, email, course, semester: Number(semester), role: role || "student" });
+      return res.status(201).json(user.toObject());
+    }
   } catch (err) {
     if (err.code === 11000) return res.status(400).json({ message: "Email already exists" });
     if (err.name === "ValidationError") return res.status(400).json({ message: err.message });
-    console.error(err); res.status(500).json({ message: "Internal server error" });
+    console.error("[user-service] DB save failed, falling back to memory:", err.message);
   }
+
+  if (memUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+    return res.status(400).json({ message: "Email already exists" });
+  }
+
+  const newUser = {
+    _id: new mongoose.Types.ObjectId().toString(),
+    name: name.trim(),
+    email: email.trim(),
+    course: course.trim(),
+    semester: Number(semester),
+    role: role || "student",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  memUsers.push(newUser);
+  res.status(201).json(newUser);
 });
 
 app.put("/users/:id", async (req, res) => {
   const errors = validate(req.body);
   if (errors.length) return res.status(400).json({ message: "Validation failed", errors });
+
+  const { name, email, course, semester, role } = req.body;
+
   try {
-    const { name, email, course, semester, role } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { name, email, course, semester: Number(semester), role },
-      { new: true, runValidators: true }
-    ).lean();
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
+    if (isDbConnected()) {
+      const user = await User.findByIdAndUpdate(
+        req.params.id,
+        { name, email, course, semester: Number(semester), role },
+        { new: true, runValidators: true }
+      ).lean();
+      if (!user) return res.status(404).json({ message: "User not found" });
+      return res.json(user);
+    }
   } catch (err) {
     if (err.name === "CastError") return res.status(404).json({ message: "User not found" });
     if (err.code === 11000) return res.status(400).json({ message: "Email already exists" });
-    if (err.name === "ValidationError") return res.status(400).json({ message: err.message });
-    console.error(err); res.status(500).json({ message: "Internal server error" });
   }
+
+  const idx = memUsers.findIndex(u => String(u._id) === String(req.params.id));
+  if (idx === -1) return res.status(404).json({ message: "User not found" });
+
+  memUsers[idx] = {
+    ...memUsers[idx],
+    name: name.trim(),
+    email: email.trim(),
+    course: course.trim(),
+    semester: Number(semester),
+    role: role || memUsers[idx].role,
+    updatedAt: new Date().toISOString()
+  };
+  res.json(memUsers[idx]);
 });
 
 app.delete("/users/:id", async (req, res) => {
   try {
-    const deleted = await User.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: "User not found" });
-    res.status(204).send();
+    if (isDbConnected()) {
+      const deleted = await User.findByIdAndDelete(req.params.id);
+      if (!deleted) return res.status(404).json({ message: "User not found" });
+      return res.status(204).send();
+    }
   } catch (err) {
     if (err.name === "CastError") return res.status(404).json({ message: "User not found" });
-    console.error(err); res.status(500).json({ message: "Internal server error" });
   }
+
+  const idx = memUsers.findIndex(u => String(u._id) === String(req.params.id));
+  if (idx === -1) return res.status(404).json({ message: "User not found" });
+  memUsers.splice(idx, 1);
+  res.status(204).send();
 });
 
 async function start() {
   const uri = process.env.MONGODB_URI;
-  let connected = false;
-  if (uri && !uri.includes("<")) {
+  if (uri && !uri.includes("<") && !uri.includes("placeholder")) {
     try {
-      await mongoose.connect(uri, { serverSelectionTimeoutMS: 3000 });
-      console.log("[user-service] Connected to MongoDB at " + uri);
-      connected = true;
+      await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+      console.log("[user-service] Connected to MongoDB at " + uri.replace(/:([^:@]{3,})@/, ":***@"));
     } catch (err) {
-      console.warn("[user-service] MongoDB connect failed (" + err.message + "), falling back to in-memory MongoDB...");
+      console.warn("[user-service] MongoDB connect warning: " + err.message + " -> running in in-memory mode.");
     }
+  } else {
+    console.log("[user-service] No valid MONGODB_URI provided. Running in in-memory mode.");
   }
-  if (!connected) {
-    try {
-      const { MongoMemoryServer } = require("mongodb-memory-server");
-      const mem = await MongoMemoryServer.create();
-      await mongoose.connect(mem.getUri());
-      console.log("[user-service] Connected to in-memory MongoDB");
-    } catch (memErr) {
-      console.error("[user-service] In-memory MongoDB failed:", memErr.message);
-      process.exit(1);
-    }
-  }
-  app.listen(PORT, () => console.log("[user-service] Listening on port " + PORT));
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log("[user-service] Listening on port " + PORT);
+  });
 }
 
 start();

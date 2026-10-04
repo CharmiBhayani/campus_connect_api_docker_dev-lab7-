@@ -2,14 +2,14 @@
   {
     "name": "1. Gateway Health Check (GET /health)",
     "status": "PASS",
-    "duration": 194,
+    "duration": 698,
     "httpStatus": 200,
     "data": {
       "status": "healthy",
       "gateway": "api-gateway",
       "version": "1.0.0",
       "uptimeSeconds": 2,
-      "timestamp": "2026-10-04T15:18:18.068Z",
+      "timestamp": "2026-10-04T16:36:14.762Z",
       "serviceDiscovery": {
         "user": {
           "name": "User Service",
@@ -32,7 +32,7 @@
   {
     "name": "2. Gateway Metadata (GET /)",
     "status": "PASS",
-    "duration": 12,
+    "duration": 10,
     "httpStatus": 200,
     "data": {
       "gateway": "CampusConnect API Gateway",
@@ -50,71 +50,71 @@
   {
     "name": "3. User Service: List Users (GET /users)",
     "status": "PASS",
-    "duration": 111,
+    "duration": 189,
     "httpStatus": 200,
     "count": 1
   },
   {
     "name": "4. User Service: Create User (POST /users)",
     "status": "PASS",
-    "duration": 25,
+    "duration": 15,
     "httpStatus": 201,
-    "createdUserId": "67010000000001a1077e9383"
+    "createdUserId": "67010000000001a107c5f023"
   },
   {
     "name": "5. User Service: Get User by ID (GET /users/:id)",
     "status": "PASS",
-    "duration": 22,
+    "duration": 13,
     "httpStatus": 200,
     "user": "Dev Patel"
   },
   {
     "name": "6. Product Service: List Products (GET /products)",
     "status": "PASS",
-    "duration": 19,
+    "duration": 11,
     "httpStatus": 200,
     "count": 1
   },
   {
     "name": "7. Product Service: Create Product (POST /products)",
     "status": "PASS",
-    "duration": 20,
+    "duration": 11,
     "httpStatus": 201,
-    "createdProductId": "67020000000001a1077e93c4"
+    "createdProductId": "67020000000001a107c5f047"
   },
   {
     "name": "8. Product Service: Get Product by ID (GET /products/:id)",
     "status": "PASS",
-    "duration": 17,
+    "duration": 10,
     "httpStatus": 200,
     "product": "Cloud Computing Handbook"
   },
   {
     "name": "9. Order Service: Create Order with Validation (POST /orders)",
     "status": "PASS",
-    "duration": 22,
+    "duration": 13,
     "httpStatus": 201,
-    "createdOrderId": "67030000000001a1077e93eb",
+    "createdOrderId": "67030000000001a107c5f05f",
     "totalAmount": 1500
   },
   {
     "name": "10. Order Service: Fetch Order by ID (GET /orders/:id)",
     "status": "PASS",
-    "duration": 18,
+    "duration": 11,
     "httpStatus": 200,
-    "orderId": "67030000000001a1077e93eb",
+    "orderId": "67030000000001a107c5f05f",
     "total": 1500
   },
   {
     "name": "11. Error Handling: Invalid ID (GET /users/000000000000000000000000)",
     "status": "PASS",
-    "duration": 19,
+    "duration": 9,
     "httpStatus": 404
   },
   {
     "name": "12. Fault Tolerance: Downstream Service Down (GET /users -> 503)",
     "status": "PASS",
-    "duration": 24,
+    "duration": 13,
     "httpStatus": 503,
     "gatewayError": "Service Unavailable: User Service is currently unreachable or stopped.",
     "targetService": "User Service"
@@ -122,7 +122,7 @@
   {
     "name": "13. Self-Healing: Restart Service & Verify Recovery (GET /users -> 200)",
     "status": "PASS",
-    "duration": 21,
+    "duration": 11,
     "httpStatus": 200,
     "recovered": true
   }
