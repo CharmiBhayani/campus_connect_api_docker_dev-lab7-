@@ -1,8 +1,8 @@
-# Render.com Deployment Blueprint - Free Tier Compatible
-# All services are deployed as web services (free tier does not support private services)
-# Only the API Gateway URL needs to be shared with clients - microservice URLs are internal
+﻿# Render.com Deployment Blueprint - Free Tier Compatible
+# Updated: 2026-10-04 (Trigger Blueprint Auto-Deploy with Graceful Fallback)
+# All services are deployed as web services
 services:
-  # ── API Gateway (Public Entry Point) ────────────────────────────────────────
+  # API Gateway (Public Entry Point)
   - type: web
     name: campusconnect-api-gateway
     runtime: docker
@@ -20,7 +20,7 @@ services:
       - key: ORDER_SERVICE_URL
         value: https://campusconnect-order-service.onrender.com
 
-  # ── User Service ─────────────────────────────────────────────────────────────
+  # User Service
   - type: web
     name: campusconnect-user-service
     runtime: docker
@@ -32,9 +32,9 @@ services:
       - key: PORT
         value: 3001
       - key: MONGODB_URI
-        sync: false  # ⚠️ Set this manually in Render Dashboard → your MongoDB Atlas URI
+        sync: false
 
-  # ── Product Service ───────────────────────────────────────────────────────────
+  # Product Service
   - type: web
     name: campusconnect-product-service
     runtime: docker
@@ -46,9 +46,9 @@ services:
       - key: PORT
         value: 3002
       - key: MONGODB_URI
-        sync: false  # ⚠️ Set this manually in Render Dashboard → your MongoDB Atlas URI
+        sync: false
 
-  # ── Order Service ─────────────────────────────────────────────────────────────
+  # Order Service
   - type: web
     name: campusconnect-order-service
     runtime: docker
@@ -60,7 +60,7 @@ services:
       - key: PORT
         value: 3003
       - key: MONGODB_URI
-        sync: false  # ⚠️ Set this manually in Render Dashboard → your MongoDB Atlas URI
+        sync: false
       - key: USER_SERVICE_URL
         value: https://campusconnect-user-service.onrender.com
       - key: PRODUCT_SERVICE_URL
