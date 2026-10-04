@@ -1,7 +1,8 @@
-# Render Infrastructure-as-Code Blueprint
-# Deploy all services and API Gateway to Render Cloud Platform
+# Render.com Deployment Blueprint - Free Tier Compatible
+# All services are deployed as web services (free tier does not support private services)
+# Only the API Gateway URL needs to be shared with clients - microservice URLs are internal
 services:
-  # ── Public API Gateway (Only service with public URL) ──────────────────────
+  # ── API Gateway (Public Entry Point) ────────────────────────────────────────
   - type: web
     name: campusconnect-api-gateway
     runtime: docker
@@ -13,23 +14,14 @@ services:
       - key: PORT
         value: 8000
       - key: USER_SERVICE_URL
-        fromService:
-          type: pserv
-          name: campusconnect-user-service
-          property: host
+        value: https://campusconnect-user-service.onrender.com
       - key: PRODUCT_SERVICE_URL
-        fromService:
-          type: pserv
-          name: campusconnect-product-service
-          property: host
+        value: https://campusconnect-product-service.onrender.com
       - key: ORDER_SERVICE_URL
-        fromService:
-          type: pserv
-          name: campusconnect-order-service
-          property: host
+        value: https://campusconnect-order-service.onrender.com
 
-  # ── Private User Service (Not reachable from internet) ─────────────────────
-  - type: pserv
+  # ── User Service ─────────────────────────────────────────────────────────────
+  - type: web
     name: campusconnect-user-service
     runtime: docker
     dockerfilePath: ./user-service/Dockerfile
@@ -40,10 +32,10 @@ services:
       - key: PORT
         value: 3001
       - key: MONGODB_URI
-        sync: false # Set in Render Dashboard: your MongoDB Atlas connection string
+        sync: false  # ⚠️ Set this manually in Render Dashboard → your MongoDB Atlas URI
 
-  # ── Private Product Service (Not reachable from internet) ──────────────────
-  - type: pserv
+  # ── Product Service ───────────────────────────────────────────────────────────
+  - type: web
     name: campusconnect-product-service
     runtime: docker
     dockerfilePath: ./product-service/Dockerfile
@@ -54,10 +46,10 @@ services:
       - key: PORT
         value: 3002
       - key: MONGODB_URI
-        sync: false # Set in Render Dashboard: your MongoDB Atlas connection string
+        sync: false  # ⚠️ Set this manually in Render Dashboard → your MongoDB Atlas URI
 
-  # ── Private Order Service (Not reachable from internet) ────────────────────
-  - type: pserv
+  # ── Order Service ─────────────────────────────────────────────────────────────
+  - type: web
     name: campusconnect-order-service
     runtime: docker
     dockerfilePath: ./order-service/Dockerfile
@@ -68,16 +60,10 @@ services:
       - key: PORT
         value: 3003
       - key: MONGODB_URI
-        sync: false # Set in Render Dashboard: your MongoDB Atlas connection string
+        sync: false  # ⚠️ Set this manually in Render Dashboard → your MongoDB Atlas URI
       - key: USER_SERVICE_URL
-        fromService:
-          type: pserv
-          name: campusconnect-user-service
-          property: host
+        value: https://campusconnect-user-service.onrender.com
       - key: PRODUCT_SERVICE_URL
-        fromService:
-          type: pserv
-          name: campusconnect-product-service
-          property: host
+        value: https://campusconnect-product-service.onrender.com
       - key: FETCH_TIMEOUT_MS
-        value: 8000
+        value: 10000
