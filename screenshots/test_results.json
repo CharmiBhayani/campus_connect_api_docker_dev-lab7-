@@ -1,0 +1,305 @@
+[
+  {
+    "stepNum": 1,
+    "title": "User Service Health Check",
+    "request": {
+      "method": "GET",
+      "url": "http://localhost:3001/"
+    },
+    "response": {
+      "service": "user-service",
+      "status": "running",
+      "port": "3001"
+    },
+    "status": 200,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:27.088Z"
+  },
+  {
+    "stepNum": 2,
+    "title": "Product Service Health Check",
+    "request": {
+      "method": "GET",
+      "url": "http://localhost:3002/"
+    },
+    "response": {
+      "service": "product-service",
+      "status": "running",
+      "port": "3002"
+    },
+    "status": 200,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:27.096Z"
+  },
+  {
+    "stepNum": 3,
+    "title": "Order Service Health Check",
+    "request": {
+      "method": "GET",
+      "url": "http://localhost:3003/"
+    },
+    "response": {
+      "service": "order-service",
+      "status": "running",
+      "port": "3003",
+      "userServiceUrl": "http://localhost:3001",
+      "productServiceUrl": "http://localhost:3002"
+    },
+    "status": 200,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:27.102Z"
+  },
+  {
+    "stepNum": 4,
+    "title": "POST /users - Create User",
+    "request": {
+      "method": "POST",
+      "url": "http://localhost:3001/users",
+      "body": {
+        "name": "Alice Kumar",
+        "email": "alice.1790358027103@campus.edu",
+        "course": "Computer Science",
+        "semester": 3,
+        "role": "student"
+      }
+    },
+    "response": {
+      "name": "Alice Kumar",
+      "email": "alice.1790358027103@campus.edu",
+      "course": "Computer Science",
+      "semester": 3,
+      "role": "student",
+      "_id": "6ab6b20b6f56eb9a40f9170a",
+      "createdAt": "2026-09-25T17:40:27.158Z",
+      "updatedAt": "2026-09-25T17:40:27.158Z"
+    },
+    "status": 201,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:27.174Z"
+  },
+  {
+    "stepNum": 5,
+    "title": "POST /products - Create Product",
+    "request": {
+      "method": "POST",
+      "url": "http://localhost:3002/products",
+      "body": {
+        "name": "Data Structures & Algorithms",
+        "description": "Undergraduate core textbook",
+        "category": "Books",
+        "price": 450,
+        "stock": 25
+      }
+    },
+    "response": {
+      "name": "Data Structures & Algorithms",
+      "description": "Undergraduate core textbook",
+      "category": "Books",
+      "price": 450,
+      "stock": 25,
+      "_id": "6ab6b20bc80cbce5057a45d4",
+      "createdAt": "2026-09-25T17:40:27.221Z",
+      "updatedAt": "2026-09-25T17:40:27.221Z"
+    },
+    "status": 201,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:27.234Z"
+  },
+  {
+    "stepNum": 6,
+    "title": "GET /users - Retrieve Users List",
+    "request": {
+      "method": "GET",
+      "url": "http://localhost:3001/users"
+    },
+    "response": [
+      {
+        "_id": "6ab6b20b6f56eb9a40f9170a",
+        "name": "Alice Kumar",
+        "email": "alice.1790358027103@campus.edu",
+        "course": "Computer Science",
+        "semester": 3,
+        "role": "student",
+        "createdAt": "2026-09-25T17:40:27.158Z",
+        "updatedAt": "2026-09-25T17:40:27.158Z"
+      }
+    ],
+    "status": 200,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:27.286Z"
+  },
+  {
+    "stepNum": 7,
+    "title": "GET /products - Retrieve Products List",
+    "request": {
+      "method": "GET",
+      "url": "http://localhost:3002/products"
+    },
+    "response": [
+      {
+        "_id": "6ab6b20bc80cbce5057a45d4",
+        "name": "Data Structures & Algorithms",
+        "description": "Undergraduate core textbook",
+        "category": "Books",
+        "price": 450,
+        "stock": 25,
+        "createdAt": "2026-09-25T17:40:27.221Z",
+        "updatedAt": "2026-09-25T17:40:27.221Z"
+      }
+    ],
+    "status": 200,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:27.306Z"
+  },
+  {
+    "stepNum": 8,
+    "title": "POST /orders - Order to User & Product Validation",
+    "request": {
+      "method": "POST",
+      "url": "http://localhost:3003/orders",
+      "body": {
+        "userId": "6ab6b20b6f56eb9a40f9170a",
+        "items": [
+          {
+            "productId": "6ab6b20bc80cbce5057a45d4",
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    "response": {
+      "userId": "6ab6b20b6f56eb9a40f9170a",
+      "userName": "Alice Kumar",
+      "userEmail": "alice.1790358027103@campus.edu",
+      "items": [
+        {
+          "productId": "6ab6b20bc80cbce5057a45d4",
+          "name": "Data Structures & Algorithms",
+          "price": 450,
+          "quantity": 2
+        }
+      ],
+      "totalAmount": 900,
+      "status": "pending",
+      "_id": "6ab6b20bb4333067a6aed4d5",
+      "createdAt": "2026-09-25T17:40:27.405Z",
+      "updatedAt": "2026-09-25T17:40:27.405Z"
+    },
+    "status": 201,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:27.419Z"
+  },
+  {
+    "stepNum": 9,
+    "title": "GET /orders/:id - Retrieve Order",
+    "request": {
+      "method": "GET",
+      "url": "http://localhost:3003/orders/6ab6b20bb4333067a6aed4d5"
+    },
+    "response": {
+      "_id": "6ab6b20bb4333067a6aed4d5",
+      "userId": "6ab6b20b6f56eb9a40f9170a",
+      "userName": "Alice Kumar",
+      "userEmail": "alice.1790358027103@campus.edu",
+      "items": [
+        {
+          "productId": "6ab6b20bc80cbce5057a45d4",
+          "name": "Data Structures & Algorithms",
+          "price": 450,
+          "quantity": 2
+        }
+      ],
+      "totalAmount": 900,
+      "status": "pending",
+      "createdAt": "2026-09-25T17:40:27.405Z",
+      "updatedAt": "2026-09-25T17:40:27.405Z"
+    },
+    "status": 200,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:27.441Z"
+  },
+  {
+    "stepNum": 10,
+    "title": "POST /orders - Invalid User ID (Expect 404)",
+    "request": {
+      "method": "POST",
+      "url": "http://localhost:3003/orders",
+      "body": {
+        "userId": "000000000000000000000000",
+        "items": [
+          {
+            "productId": "6ab6b20bc80cbce5057a45d4",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    "response": {
+      "message": "User 000000000000000000000000 not found"
+    },
+    "status": 404,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:27.455Z"
+  },
+  {
+    "stepNum": 11,
+    "title": "POST /orders - Dependency Unavailable (Expect 503)",
+    "request": {
+      "method": "POST",
+      "url": "http://localhost:3003/orders",
+      "body": {
+        "userId": "6ab6b20b6f56eb9a40f9170a",
+        "items": [
+          {
+            "productId": "6ab6b20bc80cbce5057a45d4",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    "response": {
+      "message": "User Service unavailable (request to http://localhost:3001/users/6ab6b20b6f56eb9a40f9170a failed, reason: )"
+    },
+    "status": 503,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:29.469Z"
+  },
+  {
+    "stepNum": 12,
+    "title": "POST /orders - Service Recovery Verification (Expect 201)",
+    "request": {
+      "method": "POST",
+      "url": "http://localhost:3003/orders",
+      "body": {
+        "userId": "6ab6b2148f03494e87663abf",
+        "items": [
+          {
+            "productId": "6ab6b20bc80cbce5057a45d4",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    "response": {
+      "userId": "6ab6b2148f03494e87663abf",
+      "userName": "Alice Kumar",
+      "userEmail": "alice.1790358027103@campus.edu",
+      "items": [
+        {
+          "productId": "6ab6b20bc80cbce5057a45d4",
+          "name": "Data Structures & Algorithms",
+          "price": 450,
+          "quantity": 1
+        }
+      ],
+      "totalAmount": 450,
+      "status": "pending",
+      "_id": "6ab6b214b4333067a6aed4d8",
+      "createdAt": "2026-09-25T17:40:36.752Z",
+      "updatedAt": "2026-09-25T17:40:36.752Z"
+    },
+    "status": 201,
+    "passed": true,
+    "timestamp": "2026-09-25T17:40:36.764Z"
+  }
+]

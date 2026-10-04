@@ -1,0 +1,83 @@
+# Render Infrastructure-as-Code Blueprint
+# Deploy all services and API Gateway to Render Cloud Platform
+services:
+  # ── Public API Gateway (Only service with public URL) ──────────────────────
+  - type: web
+    name: campusconnect-api-gateway
+    runtime: docker
+    dockerfilePath: ./api-gateway/Dockerfile
+    dockerContext: ./api-gateway
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: USER_SERVICE_URL
+        fromService:
+          type: pserv
+          name: campusconnect-user-service
+          property: host
+      - key: PRODUCT_SERVICE_URL
+        fromService:
+          type: pserv
+          name: campusconnect-product-service
+          property: host
+      - key: ORDER_SERVICE_URL
+        fromService:
+          type: pserv
+          name: campusconnect-order-service
+          property: host
+
+  # ── Private User Service (Not reachable from internet) ─────────────────────
+  - type: pserv
+    name: campusconnect-user-service
+    runtime: docker
+    dockerfilePath: ./user-service/Dockerfile
+    dockerContext: ./user-service
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: MONGODB_URI
+        sync: false # Set in Render Dashboard: your MongoDB Atlas connection string
+
+  # ── Private Product Service (Not reachable from internet) ──────────────────
+  - type: pserv
+    name: campusconnect-product-service
+    runtime: docker
+    dockerfilePath: ./product-service/Dockerfile
+    dockerContext: ./product-service
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 3002
+      - key: MONGODB_URI
+        sync: false # Set in Render Dashboard: your MongoDB Atlas connection string
+
+  # ── Private Order Service (Not reachable from internet) ────────────────────
+  - type: pserv
+    name: campusconnect-order-service
+    runtime: docker
+    dockerfilePath: ./order-service/Dockerfile
+    dockerContext: ./order-service
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 3003
+      - key: MONGODB_URI
+        sync: false # Set in Render Dashboard: your MongoDB Atlas connection string
+      - key: USER_SERVICE_URL
+        fromService:
+          type: pserv
+          name: campusconnect-user-service
+          property: host
+      - key: PRODUCT_SERVICE_URL
+        fromService:
+          type: pserv
+          name: campusconnect-product-service
+          property: host
+      - key: FETCH_TIMEOUT_MS
+        value: 8000

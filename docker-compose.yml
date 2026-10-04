@@ -1,0 +1,111 @@
+# CampusConnect – Lab 7 Microservices Architecture with API Gateway
+# docker compose up -d    →  start all services and gateway
+# docker compose down     →  stop and remove containers
+
+networks:
+  campus-network:
+    name: campus-network
+
+volumes:
+  user-mongo-data:
+  product-mongo-data:
+  order-mongo-data:
+
+services:
+
+  # ── API Gateway (Single External Entry Point) ───────────────────────────────
+  # ONLY the gateway exposes an external port to the host/internet
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: 8000
+      USER_SERVICE_URL: http://user-service:3001
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      ORDER_SERVICE_URL: http://order-service:3003
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+    networks:
+      - campus-network
+    restart: unless-stopped
+
+  # ── User Service (Internal Only) ────────────────────────────────────────────
+  user-mongo:
+    image: mongo:7
+    container_name: user-mongo
+    volumes:
+      - user-mongo-data:/data/db
+    networks:
+      - campus-network
+    restart: unless-stopped
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    expose:
+      - "3001"
+    environment:
+      PORT: 3001
+      MONGODB_URI: mongodb://user-mongo:27017/userdb
+    depends_on:
+      - user-mongo
+    networks:
+      - campus-network
+    restart: unless-stopped
+
+  # ── Product Service (Internal Only) ─────────────────────────────────────────
+  product-mongo:
+    image: mongo:7
+    container_name: product-mongo
+    volumes:
+      - product-mongo-data:/data/db
+    networks:
+      - campus-network
+    restart: unless-stopped
+
+  product-service:
+    build: ./product-service
+    container_name: product-service
+    expose:
+      - "3002"
+    environment:
+      PORT: 3002
+      MONGODB_URI: mongodb://product-mongo:27017/productdb
+    depends_on:
+      - product-mongo
+    networks:
+      - campus-network
+    restart: unless-stopped
+
+  # ── Order Service (Internal Only) ───────────────────────────────────────────
+  order-mongo:
+    image: mongo:7
+    container_name: order-mongo
+    volumes:
+      - order-mongo-data:/data/db
+    networks:
+      - campus-network
+    restart: unless-stopped
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    expose:
+      - "3003"
+    environment:
+      PORT: 3003
+      MONGODB_URI: mongodb://order-mongo:27017/orderdb
+      USER_SERVICE_URL: http://user-service:3001
+      PRODUCT_SERVICE_URL: http://product-service:3002
+      FETCH_TIMEOUT_MS: 5000
+    depends_on:
+      - order-mongo
+      - user-service
+      - product-service
+    networks:
+      - campus-network
+    restart: unless-stopped

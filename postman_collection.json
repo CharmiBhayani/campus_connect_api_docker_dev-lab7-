@@ -1,0 +1,309 @@
+{
+  "info": {
+    "name": "Microservices & API Gateway - Lab 7",
+    "_postman_id": "lab7-campus-connect-gateway",
+    "description": "Lab 7: CampusConnect API Gateway, Service Discovery & Cloud Deployment. Single entry point for all microservices with centralized logging, error handling, and externalized configuration.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. API Gateway Health & Discovery",
+      "item": [
+        {
+          "name": "GET /health – Gateway Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health",
+            "description": "Gateway health-check reporting status, uptime, and active service discovery routing table."
+          }
+        },
+        {
+          "name": "GET / – Gateway Metadata",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/",
+            "description": "Root endpoint describing the API Gateway and available routes."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. User Service (via Gateway)",
+      "item": [
+        {
+          "name": "GET /users – List All Users",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users",
+            "description": "Routed via Gateway: GET /users -> User Service"
+          }
+        },
+        {
+          "name": "POST /users – Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData._id) {",
+                  "    pm.collectionVariables.set('userId', jsonData._id);",
+                  "    console.log('Saved userId:', jsonData._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/users",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Kumar\",\n  \"email\": \"alice@campus.edu\",\n  \"course\": \"Computer Science\",\n  \"semester\": 3,\n  \"role\": \"student\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /users/:id – Fetch User by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        },
+        {
+          "name": "GET /users/:id – Invalid ID (404)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/000000000000000000000000"
+          }
+        },
+        {
+          "name": "PUT /users/:id – Update User",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/{{userId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Kumar\",\n  \"email\": \"alice@campus.edu\",\n  \"course\": \"Computer Science\",\n  \"semester\": 4,\n  \"role\": \"student\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /users/:id – Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Product Service (via Gateway)",
+      "item": [
+        {
+          "name": "GET /products – List All Products",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products",
+            "description": "Routed via Gateway: GET /products -> Product Service"
+          }
+        },
+        {
+          "name": "POST /products – Create Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData._id) {",
+                  "    pm.collectionVariables.set('productId', jsonData._id);",
+                  "    console.log('Saved productId:', jsonData._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/products",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Distributed Systems Principles\",\n  \"description\": \"Comprehensive guide to microservices & SOA\",\n  \"category\": \"Books\",\n  \"price\": 599.00,\n  \"stock\": 25\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /products/:id – Fetch Product by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/{{productId}}"
+          }
+        },
+        {
+          "name": "GET /products/:id – Invalid ID (404)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/000000000000000000000000"
+          }
+        },
+        {
+          "name": "PUT /products/:id – Update Product",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/products/{{productId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Distributed Systems Principles\",\n  \"description\": \"Updated 2nd Edition\",\n  \"category\": \"Books\",\n  \"price\": 649.00,\n  \"stock\": 30\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /products/:id – Delete Product",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/products/{{productId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Order Service (via Gateway)",
+      "item": [
+        {
+          "name": "GET /orders – List All Orders",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders",
+            "description": "Routed via Gateway: GET /orders -> Order Service"
+          }
+        },
+        {
+          "name": "POST /orders – Create Order (Full Chain)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData._id) {",
+                  "    pm.collectionVariables.set('orderId', jsonData._id);",
+                  "    console.log('Saved orderId:', jsonData._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/orders",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 2\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /orders/:id – Fetch Order by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/{{orderId}}"
+          }
+        },
+        {
+          "name": "POST /orders – Invalid User ID (404)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/orders",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"000000000000000000000000\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 1\n    }\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Gateway Error Handling (502/503)",
+      "item": [
+        {
+          "name": "GET /users – Unreachable Service (503 Service Unavailable)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users",
+            "description": "Executed when User Service container/process is stopped to verify centralized 503 response from Gateway."
+          }
+        },
+        {
+          "name": "GET /unmapped – Unmapped Route (404 Not Handled)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/unknown-service-path",
+            "description": "Verifies that unmapped gateway routes return clear 404 response."
+          }
+        }
+      ]
+    }
+  ]
+}

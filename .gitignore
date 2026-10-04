@@ -1,0 +1,32 @@
+# Dependencies - never commit these
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# Environment files - contain secrets
+.env
+# Keep .env.example (safe template)
+!.env.example
+
+# Build artifacts
+dist/
+build/
+.cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# MongoDB memory server downloads (can be large)
+.cache/
+mongodb-binaries/
